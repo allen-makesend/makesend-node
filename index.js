@@ -23,7 +23,7 @@ app.get('/namwan', async (req, res) => {
         const url = `https://apiold.makesend.asia/api/google/makesend/getSaleRegisterLeadResultList`;
         const { data } = await axios.post(url);
         const list = data.saleReferralList.filter(client => {
-            return parseInt(client.saleID) === 11; // 12 is dedicated namwan user referral ID
+            return parseInt(client.saleID) === 12; // 12 is dedicated namwan user referral ID
         });
         console.log(list);
         res.send(JSON.stringify(list));
