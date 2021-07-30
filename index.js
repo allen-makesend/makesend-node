@@ -70,7 +70,7 @@ app.post('/fast/invoices', checkOrigin, async(req, res) => {
     try {
         const { userIds, startDate, endDate } = req.body;
         if (userIds && userIds.length && startDate && endDate) {
-            const url = `http://localhost:8000/searchinvoices`;
+            const url = `https://driver-webapi.makesend.ninja/searchinvoices`;
             const response = await axios({
                 url,
                 method: 'POST',
