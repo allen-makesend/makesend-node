@@ -52,7 +52,7 @@ app.post('/fast/auth', async (req, res) => {
     }
 });
 
-app.post('/fast/salesperformance', async(req, res) => {
+app.post('/fast/salesperformance', checkOrigin, async(req, res) => {
     try {
         const {salesId} = req.body;
         const url = `https://apiold.makesend.asia/api/google/makesend/getSaleRegisterLeadResultList`;
@@ -98,3 +98,28 @@ app.listen(PORT, (err) => {
     if (err) console.log(err);
     console.log(`Server starts at port ${PORT}`);
 });
+
+function checkOrigin(req, res, next) {
+    const origin = req.headers.origin;
+    const urlList = validOrigins();
+    const isOriginValid = urlList.some(url => origin.includes(url));
+    if (isOriginValid) {
+        next();
+    } else {
+        res.status(401).send(null);
+    }
+}
+
+function validOrigins() {
+    return [
+        'localhost:3000',
+        '127.0.0.1:3000',
+        'localhost:5500',
+        '127.0.0.1:5500',
+        'localhost:8080',
+        '127.0.0.1:8080',
+        'makesend-fast.netlify.app',
+        'makesend.asia',
+        'makesend.ninja',
+    ]
+}
