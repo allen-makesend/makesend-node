@@ -52,7 +52,7 @@ app.post('/fast/auth', async (req, res) => {
     }
 });
 
-app.post('/fast/salesperformance', checkOrigin, async(req, res) => {
+app.post('/fast/salesreferrals', checkOrigin, async(req, res) => {
     try {
         const {salesId} = req.body;
         const url = `https://apiold.makesend.asia/api/google/makesend/getSaleRegisterLeadResultList`;
@@ -62,6 +62,30 @@ app.post('/fast/salesperformance', checkOrigin, async(req, res) => {
         });
         res.send(JSON.stringify(list));
     } catch (err) {
+        res.status(500).send(err);
+    }
+});
+
+app.post('/fast/invoices', checkOrigin, async(req, res) => {
+    try {
+        const { userIds, startDate, endDate } = req.body;
+        if (userIds && userIds.length && startDate && endDate) {
+            const url = `http://localhost:8000/searchinvoices`;
+            const response = await axios({
+                url,
+                method: 'POST',
+                headers: {
+                    credentials: 'makesend_fast',
+                    'content-type': 'application/json',
+                },
+                data: { userIds, startDate, endDate, },
+            });
+            res.send(response.data);
+        } else {
+            res.status(400).send('missing body params');
+        }
+    } catch (err) {
+        console.log(err);
         res.status(500).send(err);
     }
 });
