@@ -3,6 +3,8 @@ const app = express();
 const axios = require('axios');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const mysql = require('mysql');
+require('dotenv').config();
 
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -70,17 +72,39 @@ app.post('/fast/invoices', checkOrigin, async(req, res) => {
     try {
         const { userIds, startDate, endDate } = req.body;
         if (userIds && userIds.length && startDate && endDate) {
-            const url = `https://driver-webapi.makesend.ninja/searchinvoices`;
-            const response = await axios({
-                url,
-                method: 'POST',
-                headers: {
-                    credentials: 'makesend_fast',
-                    'content-type': 'application/json',
-                },
-                data: { userIds, startDate, endDate, },
+            const userIdsText = userIds.join();
+            const connection = mysql.createConnection({
+                host: process.env.DB_HOST,
+                port: process.env.DB_PORT,
+                user: process.env.DB_USER,
+                password: process.env.DB_PASSWORD,
+                database: process.env.DB_DATABASE
             });
-            res.send(response.data);
+            connection.connect();
+            const query = `
+                SELECT 
+                    app_user.id AS user_id,
+                    app_user.first_name AS first_name,
+                    app_user.last_name AS last_name,
+                    app_user.phone AS phone,
+                    app_user.email AS email,
+                    invoice.invoice_id AS invoice_id,
+                    invoice.status AS payment_status,
+                    invoice.created_at AS created_at,
+                    invoice.updated_at AS updated_at,
+                    bill.amount AS amount,
+                    bill.payment_type AS payment_type,
+                    bill.type AS type
+                FROM \`invoice\`
+                JOIN \`bill\` ON invoice.bill_id = bill.id
+                JOIN \`app_user\` ON app_user.id = invoice.user_id
+                WHERE invoice.user_id IN (${userIdsText}) AND invoice.created_at >= CAST('${startDate}' AS DATE) AND invoice.created_at <= CAST('${endDate}' AS DATE)
+            `;
+            connection.query(query, function (error, results, fields) {
+                if (error) throw error;
+                res.send(JSON.stringify(results));
+            });
+            connection.end();
         } else {
             res.status(400).send('missing body params');
         }
