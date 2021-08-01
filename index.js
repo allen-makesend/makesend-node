@@ -12,13 +12,17 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 8080;
 
-// import sales emails
-const salesEmails = require('./assets/salesEmails.js');
-
 app.post('/fast/login', async (req, res) => {
     try {
-        if (req.body.email.toLowerCase() in salesEmails) {
-            res.send(JSON.stringify({email: req.body.email}));
+        const response = await axios('https://apiold.makesend.asia/api/google/makesend/getSaleTeam', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+            },
+        });
+        const salesEmails = response.data.saleTeam.map(sale => sale.email.toLowerCase());
+        if (salesEmails.includes(req.body.email.toLowerCase())) {
+            res.send(JSON.stringify({ email: req.body.email }));
         } else {
             res.status(401).send(false);
         }
@@ -40,8 +44,15 @@ app.post('/fast/auth', async (req, res) => {
     try {
         if (req.headers.authorization) {
             const credentials = req.headers.authorization.split(' ')[1];
-            if (credentials in salesEmails) {
-                res.send(JSON.stringify({user: salesEmails[credentials]}));
+            const response = await axios('https://apiold.makesend.asia/api/google/makesend/getSaleTeam', {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                },
+            });
+            const salesEmails = response.data.saleTeam.map(sale => sale.email);
+            if (salesEmails.includes(credentials)) {
+                res.send(JSON.stringify({ user: response.data.saleTeam.find(sale => sale.email.toLowerCase() === credentials.toLowerCase()) }));
             } else {
                 res.status(401).send(false);
             }
@@ -54,13 +65,13 @@ app.post('/fast/auth', async (req, res) => {
     }
 });
 
-app.post('/fast/salesreferrals', checkOrigin, async(req, res) => {
+app.post('/fast/salesreferrals', checkOrigin, async (req, res) => {
     try {
-        const {salesId} = req.body;
+        const { salesId } = req.body;
         const url = `https://apiold.makesend.asia/api/google/makesend/getSaleRegisterLeadResultList`;
         const { data } = await axios.post(url);
         const list = data.saleReferralList.filter(client => {
-            return parseInt(client.saleID) === salesId; 
+            return parseInt(client.saleID) === salesId;
         });
         res.send(JSON.stringify(list));
     } catch (err) {
@@ -68,7 +79,7 @@ app.post('/fast/salesreferrals', checkOrigin, async(req, res) => {
     }
 });
 
-app.post('/fast/invoices', checkOrigin, async(req, res) => {
+app.post('/fast/invoices', checkOrigin, async (req, res) => {
     try {
         const { userIds, startDate, endDate } = req.body;
         if (userIds && userIds.length && startDate && endDate) {
